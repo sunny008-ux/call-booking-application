@@ -12,14 +12,20 @@ const createBooking = asyncHandler(async (req, res) => {
         ip
     } = req.body;
 
-    // Image from multer
+    // Image from multer (GridFS / filename)
     const image = req.file ? req.file.filename : null;
 
+    // ------------------------
+    // Basic validation
+    // ------------------------
     if (!name || !email || !phonenumber) {
         res.status(400);
         throw new Error('Required fields missing');
     }
 
+    // ------------------------
+    // Save booking to MongoDB
+    // ------------------------
     const booking = await Booking.create({
         name,
         email,
@@ -30,18 +36,19 @@ const createBooking = asyncHandler(async (req, res) => {
         ip
     });
 
-    // optional mails
-    try {
-        await sendMail(email, name, "user");
-        await sendMail(process.env.ADMIN_EMAIL, name, "admin");
-    } catch (e) {
-        console.log("Mail failed:", e.message);
-    }
-
+    // ------------------------
+    // Respond immediately (IMPORTANT)
+    // ------------------------
     res.status(201).json({
         success: true,
         booking
     });
-});
 
-module.exports = { createBooking };
+    // ------------------------
+    // Fire-and-forget emails
+    // ------------------------
+    sendMail(email, name, "user")
+        .catch(err => console.error("User mail failed:", err.message));
+
+    sendMail(process.env.ADMIN_EMAIL, name, "admin")
+        .catch(err => console.error("Admin mail failed:
