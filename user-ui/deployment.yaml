@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-ui
+  labels:
+    app: user-ui
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: user-ui
+  template:
+    metadata:
+      labels:
+        app: user-ui
+    spec:
+      containers:
+        - name: user-ui
+          image: sunnytyagi13/call-booking-user-ui:1
+          ports:
+            - containerPort: 80
