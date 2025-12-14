@@ -1,4 +1,4 @@
-name: CI-CD NodeJS Pipeline
+name: Microservices CI Pipeline
 
 on:
   push:
@@ -12,18 +12,26 @@ jobs:
   build-scan-push:
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        service:
+          - admin-api
+          - user-api
+          - admin-ui
+          - user-ui
+
     env:
-      IMAGE_NAME: sunnytyagi13/call-booking-app
+      IMAGE_REPO: sunnytyagi13/call-booking
 
     steps:
     # -------------------------
     # 1. Checkout Code
     # -------------------------
-    - name: Checkout Repository
+    - name: Checkout Code
       uses: actions/checkout@v4
 
     # -------------------------
-    # 2. Setup Node.js
+    # 2. Setup Node
     # -------------------------
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -34,23 +42,23 @@ jobs:
     # 3. Install Dependencies
     # -------------------------
     - name: Install Dependencies
-      run: |
-        npm install
-      working-directory: admin-api
+      run: npm install
+      working-directory: ${{ matrix.service }}
 
     # -------------------------
-    # 4. Run Tests (Optional)
+    # 4. Run Tests
     # -------------------------
-    - name: Run Unit Tests
-      run: |
-        npm test || true
-      working-directory: admin-api
+    - name: Run Tests
+      run: npm test || true
+      working-directory: ${{ matrix.service }}
 
     # -------------------------
     # 5. SonarQube Scan
     # -------------------------
     - name: SonarQube Scan
       uses: SonarSource/sonarqube-scan-action@v2
+      with:
+        projectBaseDir: ${{ matrix.service }}
       env:
         SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -67,31 +75,23 @@ jobs:
     # -------------------------
     - name: Build Docker Image
       run: |
-        docker build -t $IMAGE_NAME:${{ github.run_number }} .
+        docker build \
+          -t $IMAGE_REPO-${{ matrix.service }}:${{ github.run_number }} .
+      working-directory: ${{ matrix.service }}
 
     # -------------------------
-    # 8. Trivy File System Scan
+    # 8. Trivy Image Scan
     # -------------------------
-    - name: Trivy FS Scan
+    - name: Trivy Scan
       uses: aquasecurity/trivy-action@master
       with:
-        scan-type: fs
+        image-ref: ${{ env.IMAGE_REPO }}-${{ matrix.service }}:${{ github.run_number }}
         severity: HIGH,CRITICAL
         exit-code: 0
 
     # -------------------------
-    # 9. Trivy Image Scan
-    # -------------------------
-    - name: Trivy Image Scan
-      uses: aquasecurity/trivy-action@master
-      with:
-        image-ref: ${{ env.IMAGE_NAME }}:${{ github.run_number }}
-        severity: HIGH,CRITICAL
-        exit-code: 0
-
-    # -------------------------
-    # 10. Push Docker Image
+    # 9. Push Docker Image
     # -------------------------
     - name: Push Docker Image
       run: |
-        docker push $IMAGE_NAME:${{ github.run_number }}
+        docker push $IMAGE_REPO-${{ matrix.service }}:${{ github.run_number }}
