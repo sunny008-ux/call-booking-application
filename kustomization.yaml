@@ -1,0 +1,5 @@
+resources:
+  - admin-api
+  - user-api
+  - admin-ui
+  - user-ui
