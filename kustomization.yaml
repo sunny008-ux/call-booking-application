@@ -1,4 +1,5 @@
 resources:
+  - mongodb
   - admin-api
   - user-api
   - admin-ui
