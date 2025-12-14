@@ -17,10 +17,81 @@ spec:
       containers:
         - name: user-api
           image: sunnytyagi13/call-booking-user-api:51
+          imagePullPolicy: Always
+
           ports:
             - containerPort: 3000
+
           env:
+            # ---------------------------
+            # Application
+            # ---------------------------
             - name: PORT
               value: "3000"
-            - name: MONGO_URI
+
+            # ---------------------------
+            # MongoDB
+            # ---------------------------
+            - name: MONGO_URL
               value: "mongodb://mongodb:27017/callbooking"
+
+            # ---------------------------
+            # Admin email (receiver)
+            # ---------------------------
+            - name: ADMIN_EMAIL
+              value: "admin@deekshithsn.co.in"
+
+            # ---------------------------
+            # SMTP (from Kubernetes Secret)
+            # ---------------------------
+            - name: SMTP_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: smtp-secret
+                  key: SMTP_HOST
+
+            - name: SMTP_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: smtp-secret
+                  key: SMTP_PORT
+
+            - name: SMTP_USER
+              valueFrom:
+                secretKeyRef:
+                  name: smtp-secret
+                  key: SMTP_USER
+
+            - name: SMTP_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: smtp-secret
+                  key: SMTP_PASS
+
+          # ---------------------------
+          # Health checks (IMPORTANT)
+          # ---------------------------
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 20
+            periodSeconds: 20
+
+          # ---------------------------
+          # Resources (best practice)
+          # ---------------------------
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
