@@ -15,10 +15,12 @@ spec:
         app: admin-api
     spec:
       containers:
-      - name: admin-api
-        image: sunnytyagi13/call-booking-admin-api:27
-        ports:
-        - containerPort: 3000
-        env:
+        - name: admin-api
+          image: sunnytyagi13/call-booking-admin-api:27
+          ports:
+            - containerPort: 3000
+          env:
             - name: PORT
               value: "3000"
+            - name: MONGO_URI
+              value: "mongodb://mongodb:27017/callbooking"
