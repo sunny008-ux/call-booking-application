@@ -1,0 +1,97 @@
+name: CI-CD NodeJS Pipeline
+
+on:
+  push:
+    branches:
+      - development
+  pull_request:
+    branches:
+      - development
+
+jobs:
+  build-scan-push:
+    runs-on: ubuntu-latest
+
+    env:
+      IMAGE_NAME: sunnytyagi13/call-booking-app
+
+    steps:
+    # -------------------------
+    # 1. Checkout Code
+    # -------------------------
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    # -------------------------
+    # 2. Setup Node.js
+    # -------------------------
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    # -------------------------
+    # 3. Install Dependencies
+    # -------------------------
+    - name: Install Dependencies
+      run: |
+        npm install
+      working-directory: admin-api
+
+    # -------------------------
+    # 4. Run Tests (Optional)
+    # -------------------------
+    - name: Run Unit Tests
+      run: |
+        npm test || true
+      working-directory: admin-api
+
+    # -------------------------
+    # 5. SonarQube Scan
+    # -------------------------
+    - name: SonarQube Scan
+      uses: SonarSource/sonarqube-scan-action@v2
+      env:
+        SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+    # -------------------------
+    # 6. Docker Login
+    # -------------------------
+    - name: Docker Login
+      run: |
+        echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+    # -------------------------
+    # 7. Build Docker Image
+    # -------------------------
+    - name: Build Docker Image
+      run: |
+        docker build -t $IMAGE_NAME:${{ github.run_number }} .
+
+    # -------------------------
+    # 8. Trivy File System Scan
+    # -------------------------
+    - name: Trivy FS Scan
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: fs
+        severity: HIGH,CRITICAL
+        exit-code: 0
+
+    # -------------------------
+    # 9. Trivy Image Scan
+    # -------------------------
+    - name: Trivy Image Scan
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: ${{ env.IMAGE_NAME }}:${{ github.run_number }}
+        severity: HIGH,CRITICAL
+        exit-code: 0
+
+    # -------------------------
+    # 10. Push Docker Image
+    # -------------------------
+    - name: Push Docker Image
+      run: |
+        docker push $IMAGE_NAME:${{ github.run_number }}
