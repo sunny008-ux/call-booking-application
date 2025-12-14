@@ -1,5 +1,5 @@
-import axios from "./"
+import axios from "./";
 
 export const addBooking = (data) => {
-    return axios.post("/bookings", data, { headers: { 'Content-Type': 'multipart/form-data' } })
-}
+  return axios.post("/api/bookings", data);
+};
