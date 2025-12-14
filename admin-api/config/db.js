@@ -1,15 +1,21 @@
-const mongoose = require ('mongoose');
+const mongoose = require('mongoose');
+
 const connectDB = async () => {
-    try{
-          const conn = await mongoose.connect(process.env.MONGO_URL, err => {
-        if(err) throw err;
-        console.log('connected to MongoDB')
-    });  
-          console.log(`Mongodb connected: ${conn.connection.host}`);
-    }catch(error){
-            console.error(`Error: ${error.message}`);
-            process.exit();
-    }
+  try {
+    const mongoURI =
+      process.env.MONGO_URI ||
+      'mongodb://mongodb:27017/callbooking';
+
+    const conn = await mongoose.connect(mongoURI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+
+    console.log(`✅ MongoDB connected: ${conn.connection.host}`);
+  } catch (error) {
+    console.error(`❌ MongoDB connection error: ${error.message}`);
+    process.exit(1); // Exit with failure
+  }
 };
 
 module.exports = connectDB;
