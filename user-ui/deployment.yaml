@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: user-ui
-          image: sunnytyagi13/call-booking-user-ui:16
+          image: sunnytyagi13/call-booking-user-ui:47
           ports:
             - containerPort: 3000
           env:
