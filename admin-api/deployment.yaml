@@ -20,4 +20,7 @@ spec:
       - name: admin-api
         image: sunnytyagi13/call-booking-admin-api:16
         ports:
-        - containerPort: 3000
+        - containerPort: 1004
+        env:
+            - name: PORT
+              value: "1004"
