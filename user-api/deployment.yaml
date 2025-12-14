@@ -16,6 +16,6 @@ spec:
     spec:
       containers:
         - name: user-api
-          image: sunnytyagi13/call-booking-user-api:1
+          image: sunnytyagi13/call-booking-user-api:16
           ports:
             - containerPort: 3001
