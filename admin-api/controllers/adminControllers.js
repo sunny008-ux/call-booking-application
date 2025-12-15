@@ -70,3 +70,4 @@ const login = asyncHandler(async (req, res) => {
 
 
 module.exports = { registerAdmin, login };
+
