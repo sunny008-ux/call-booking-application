@@ -40,7 +40,14 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build Docker Image
-        run: docker build -t sunnytyagi13/admin-api:${{ github.sha }} .
+        run: |
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          docker build \
+            -t sunnytyagi13/admin-api:latest \
+            -t sunnytyagi13/admin-api:$SHORT_SHA \
 
       - name: Push Docker Image
-        run: docker push sunnytyagi13/admin-api:${{ github.sha }}
+        run: |
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          docker push sunnytyagi13/admin-api:latest
+          docker push sunnytyagi13/admin-api:$SHORT_SHA
