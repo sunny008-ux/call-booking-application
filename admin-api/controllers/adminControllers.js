@@ -67,6 +67,4 @@ const login = asyncHandler(async (req, res) => {
         throw new Error('Invalid username or password')
     }
 })
-
-
 module.exports = { registerAdmin, login };
