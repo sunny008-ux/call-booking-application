@@ -1,0 +1,25 @@
+name: Admin UI CI
+
+on:
+  push:
+    paths:
+      - "admin-ui/**"
+
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: admin-ui
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build UI
+        run: npm install && npm run build
+
+      - name: Docker Build & Push
+        run: |
+          docker build -t sunny008/admin-ui:${{ github.sha }} .
+          docker push sunny008/admin-ui:${{ github.sha }}
