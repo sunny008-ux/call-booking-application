@@ -14,12 +14,44 @@ jobs:
         working-directory: admin-ui
 
     steps:
-      - uses: actions/checkout@v4
+      # 1️⃣ Checkout source code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2️⃣ Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: npm
+          cache-dependency-path: admin-ui/package-lock.json
+
+      # 3️⃣ Install & build UI
+      - name: Install dependencies
+        run: npm install
 
       - name: Build UI
-        run: npm install && npm run build
+        run: npm run build
 
-      - name: Docker Build & Push
+      # 4️⃣ Docker login (using token)
+      - name: Docker Login
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # 5️⃣ Build Docker image with multiple tags
+      - name: Build Docker Image
         run: |
-          docker build -t sunny008/admin-ui:${{ github.sha }} .
-          docker push sunny008/admin-ui:${{ github.sha }}
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          docker build \
+            -t sunnytyagi13/admin-ui:latest \
+            -t sunnytyagi13/admin-ui:$SHORT_SHA \
+            .
+
+      # 6️⃣ Push Docker images
+      - name: Push Docker Image
+        run: |
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          docker push sunnytyagi13/admin-ui:latest
+          docker push sunnytyagi13/admin-ui:$SHORT_SHA
