@@ -14,33 +14,31 @@ jobs:
         working-directory: user-ui
 
     steps:
-      # 1️⃣ Checkout source code
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2️⃣ Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 18
           cache: npm
-          cache-dependency-path: admin-ui/package-lock.json
+          cache-dependency-path: user-ui/package-lock.json
 
-      # 3️⃣ Install & build UI
       - name: Install dependencies
         run: npm install
 
+      # Recommended: fix code instead of CI=false
       - name: Build UI
         run: npm run build
+        # TEMP workaround if needed:
+        # run: CI=false npm run build
 
-      # 4️⃣ Docker login (using token)
       - name: Docker Login
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # 5️⃣ Build Docker image with multiple tags
       - name: Build Docker Image
         run: |
           SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
@@ -49,7 +47,6 @@ jobs:
             -t sunnytyagi13/user-ui:$SHORT_SHA \
             .
 
-      # 6️⃣ Push Docker images
       - name: Push Docker Image
         run: |
           SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
