@@ -9,7 +9,7 @@ on:
       - "admin-api/**"
 
 jobs:
-  build-scan-push:
+  build-and-push:
     runs-on: ubuntu-latest
 
     defaults:
@@ -20,23 +20,27 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Java
-        uses: actions/setup-java@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          distribution: temurin
-          java-version: 17
+          node-version: 18
+          cache: "npm"
+          cache-dependency-path: admin-api/package-lock.json
 
-      - name: Build
-        run: mvn clean package -DskipTests
+      - name: Install dependencies
+        run: npm install
 
-      - name: Docker Build
-        run: docker build -t sunny008/admin-api:${{ github.sha }} .
+      - name: Run tests (optional)
+        run: npm test --if-present
 
-      - name: Login to DockerHub
+      - name: Docker Login
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Push Image
-        run: docker push sunny008/admin-api:${{ github.sha }}
+      - name: Build Docker Image
+        run: docker build -t sunnytyagi13/admin-api:${{ github.sha }} .
+
+      - name: Push Docker Image
+        run: docker push sunnytyagi13/admin-api:${{ github.sha }}
