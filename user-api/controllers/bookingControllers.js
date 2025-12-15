@@ -52,3 +52,5 @@ const createBooking = asyncHandler(async (req, res) => {
 
     sendMail(process.env.ADMIN_EMAIL, name, "admin")
         .catch(err => console.error("Admin mail failed:
+
+                
