@@ -57,3 +57,5 @@ const getBookingImage = asyncHandler(async (req, res) => {
 })
 
 module.exports = { updateBooking, getBookings, getBookingImage };
+
+
