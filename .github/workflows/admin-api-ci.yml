@@ -45,6 +45,7 @@ jobs:
           docker build \
             -t sunnytyagi13/admin-api:latest \
             -t sunnytyagi13/admin-api:$SHORT_SHA \
+            .
 
       - name: Push Docker Image
         run: |
