@@ -104,3 +104,5 @@ jobs:
     - name: Push Docker Image
       run: |
         docker push $IMAGE_REPO-${{ matrix.service }}:${{ github.run_number }}
+
+      
