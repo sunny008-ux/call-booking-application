@@ -1,5 +1,5 @@
 import axios from '../services';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import MainScreen from '../layouts/MainScreen';
 import { Form, Button, Modal, Row, Col, Card, Alert } from "react-bootstrap";
 import Loading from "../components/Loading";
@@ -21,244 +21,203 @@ function CreateBooking() {
     phonenumber: '',
     location: '',
     servicetype: 'Career Consulting'
-  })
+  });
+
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(false);
   const [pic, setPic] = useState([null, null]);
-  const [showModal, setShowModal] = useState(false)
-  const [phoneMessage, setPhoneMessage] = useState('')
+  const [showModal, setShowModal] = useState(false);
+  const [phoneMessage, setPhoneMessage] = useState('');
+  const [showSuccess, setShowSuccess] = useState(false);
 
-  const fileRef = useRef('')
+  const fileRef = useRef('');
 
-  const [showSuccess, setShowSuccess] = useState(false)
+  /* ✅ FIXED: memoized + safe state update */
+  const getLocation = useCallback(() => {
+    axios.get('https://ip-api.com/json')
+      .then((data) => {
+        setBookingInfo(prev => ({
+          ...prev,
+          location: `${data.data.city}, ${data.data.regionName}, ${data.data.countryCode}`,
+          ip: data.data.query
+        }));
+      })
+      .catch(() => {
+        // fail silently if API is blocked
+      });
+  }, []);
+
+  useEffect(() => {
+    getLocation();
+  }, [getLocation]);
 
   const submitHandler = (e) => {
-    e.preventDefault()
+    e.preventDefault();
     observe('bookings_event', { custom_tag: 'booking_event' }, 1);
+
     if (!isPossibleNumber(bookingInfo.phonenumber) || !isValidPhoneNumber(bookingInfo.phonenumber)) {
-      setPhoneMessage('Enter valid Number.')
+      setPhoneMessage('Enter valid Number.');
       return;
     }
-    setShowModal(true)
+    setShowModal(true);
   };
 
-
-
   const createBooking = async () => {
-    console.log('Booking')
-    setShowModal(false)
+    setShowModal(false);
     setLoading(true);
-    let formData = new FormData()
-    const { name, email, phonenumber, location, servicetype, ip } = bookingInfo
-    formData.append('name', name)
-    formData.append('email', email)
-    formData.append('phonenumber', phonenumber)
-    formData.append('servicetype', servicetype)
-    formData.append('location', location)
-    formData.append('ip', ip)
-    formData.append('image', pic[0])
-  
+
+    const formData = new FormData();
+    const { name, email, phonenumber, location, servicetype, ip } = bookingInfo;
+
+    formData.append('name', name);
+    formData.append('email', email);
+    formData.append('phonenumber', phonenumber);
+    formData.append('servicetype', servicetype);
+    formData.append('location', location);
+    formData.append('ip', ip);
+    formData.append('image', pic[0]);
+
     addBooking(formData)
       .then(() => {
         setLoading(false);
-        setShowSuccess(true)
+        setShowSuccess(true);
         setBookingInfo({
-          ...bookingInfo,
           name: '',
           email: '',
           phonenumber: '',
-          servicetype: 'Career Consulting',
-        })
-        setPic([null, null])
-        fileRef.current.value = ''
+          location: bookingInfo.location,
+          servicetype: 'Career Consulting'
+        });
+        setPic([null, null]);
+        fileRef.current.value = '';
+
         setTimeout(() => {
-          setShowSuccess(false)
-        }, 10000);
-      }).catch((error) => {
-        setLoading(false);
-        setError(error.response.data.message);
-        setTimeout(() => {
-          setError('')
+          setShowSuccess(false);
         }, 10000);
       })
-
-  
-  }
-
-
-  const getLocation = () => {
-    axios.get('http://ip-api.com/json')
-      .then((data) => {
-        setBookingInfo({ ...bookingInfo, location: data.data.city + ', ' + data.data.regionName + ', ' + data.data.countryCode, ip: data.data.query })
+      .catch((error) => {
+        setLoading(false);
+        setError(error?.response?.data?.message || 'Something went wrong');
+        setTimeout(() => {
+          setError('');
+        }, 10000);
       });
-  }
-
-  const postDetails = (pics) => {
-    let reader = new FileReader()
-    reader.onloadend = () => {
-      setPic([pics, reader.result])
-    }
-    reader.readAsDataURL(pics)
   };
 
-  useEffect(() => {
-    getLocation()
-  }, [])
-
+  const postDetails = (pics) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPic([pics, reader.result]);
+    };
+    reader.readAsDataURL(pics);
+  };
 
   return (
     <MainScreen title="Book Your Slot">
       <Row className='justify-content-center px-2'>
         <Col md={8} xs={12} className="position-relative">
-          {
 
-            showSuccess && <Alert variant="success">
-              <Alert.Heading><BookIcon className="mx-2" style={{ width: 15 }} />Booked..</Alert.Heading>
-              <p>
-                Your booking is confirmed. Somebody from the team contact you soon.
-              </p>
+          {showSuccess && (
+            <Alert variant="success">
+              <Alert.Heading>
+                <BookIcon className="mx-2" style={{ width: 15 }} />
+                Booked..
+              </Alert.Heading>
+              <p>Your booking is confirmed. Somebody from the team will contact you soon.</p>
             </Alert>
-          }
+          )}
+
           <Card className='shadow p-4'>
             <Card.Body>
               <div className='loginContainer'>
                 {error && <ErrorMessage variant="danger">{error}</ErrorMessage>}
-                <Form className='row' onSubmit={(e) => submitHandler(e)}>
-                  <Form.Group className='mb-2 col-9' controlId="name">
+
+                <Form className='row' onSubmit={submitHandler}>
+
+                  <Form.Group className='mb-2 col-9'>
                     <Form.Label>Name</Form.Label>
                     <Form.Control
-                      type="name"
-                      required={true}
+                      required
                       value={bookingInfo.name}
-                      placeholder="Enter name"
                       onChange={(e) => setBookingInfo({ ...bookingInfo, name: e.target.value })}
                     />
                   </Form.Group>
 
-                  <Form.Group className='mb-2 col-6' controlId="email">
-                    <Form.Label>Email address</Form.Label>
+                  <Form.Group className='mb-2 col-6'>
+                    <Form.Label>Email</Form.Label>
                     <Form.Control
                       type="email"
-                      required={true}
+                      required
                       value={bookingInfo.email}
-                      placeholder="Enter email"
                       onChange={(e) => setBookingInfo({ ...bookingInfo, email: e.target.value })}
                     />
                   </Form.Group>
 
-                  <Form.Group className='mb-2 col-6' controlId="phone">
+                  <Form.Group className='mb-2 col-6'>
                     <Form.Label>Phone Number</Form.Label>
                     <PhoneInput
-                      required={true}
+                      required
                       defaultCountry='US'
                       className='px-2 form-control'
-                      numberInputProps={{ className: 'border-0', style: { 'outline': 'none' } }}
                       placeholder="Enter phone number"
                       value={bookingInfo.phonenumber}
                       onChange={(val) => {
-                        setBookingInfo({ ...bookingInfo, phonenumber: val })
-                        setPhoneMessage('')
-                      }} />
+                        setBookingInfo({ ...bookingInfo, phonenumber: val });
+                        setPhoneMessage('');
+                      }}
+                    />
                     <Form.Text className='text-danger'>{phoneMessage}</Form.Text>
                   </Form.Group>
 
-                  <Form.Group className='mb-2 col-6' controlId="service">
+                  <Form.Group className='mb-2 col-6'>
                     <Form.Label>Service Type</Form.Label>
-                    <Form.Control as="select"
-                      type="select"
-                      required={true}
+                    <Form.Control
+                      as="select"
                       value={bookingInfo.servicetype}
-                      onChange={e => {
-                        setBookingInfo({ ...bookingInfo, servicetype: e.target.value });
-                      }}
+                      onChange={(e) => setBookingInfo({ ...bookingInfo, servicetype: e.target.value })}
                     >
                       <option>Career Consulting</option>
                       <option>Mock Interview</option>
                       <option>Devops Consulting</option>
-                      <option disabled>Job support will not ne entertained</option>
                     </Form.Control>
                     <Form.Text className="text-muted">
-                      Payment can be done via Phonepe, G-Pay to {PAYMENT_NUMBER}.<br />
-                      Through PayPal send it to DeekshithSN
+                      Payment via PhonePe / GPay to {PAYMENT_NUMBER}
                     </Form.Text>
                   </Form.Group>
-                  <Form.Group className='col-6'>
-                    <Form.Label>Cost</Form.Label>
-                    <Card>
-                      <Card.Body className='bg-light'>
-                        <div>Career Consulting ( 1hour ) - $8 / ₹500</div>
-                        <div>Mock Interview ( 1hour ) -  $8 / ₹500</div>
-                        <div>Devops Consulting ( 1hour ) - $8 / ₹500</div>
-                      </Card.Body>
-                    </Card>
-                  </Form.Group>
-                  <Form.Group className='mb-2 col-9' controlId="location">
+
+                  <Form.Group className='mb-2 col-9'>
                     <Form.Label>Location</Form.Label>
-                    <Form.Control
-                      disabled={true}
-                      type="text"
-                      value={bookingInfo.location}
-                      placeholder="Enter your location"
-                    />
+                    <Form.Control disabled value={bookingInfo.location} />
                   </Form.Group>
-                  <Form.Group className='mb-2 col-9' controlId="formFile">
+
+                  <Form.Group className='mb-2 col-9'>
                     <Form.Label>Upload Payment Screenshot</Form.Label>
-                    <Form.Control accept='image/png,image/jpeg' required={true} type="file"
-                      onChange={(e) => postDetails(e.target.files[0])} ref={fileRef}
-                      label="Upload Payment Screenshot"
+                    <Form.Control
+                      type="file"
+                      required
+                      accept="image/png,image/jpeg"
+                      ref={fileRef}
+                      onChange={(e) => postDetails(e.target.files[0])}
                     />
                   </Form.Group>
-                  <div className='d-flex align-items-center justify-content-center mt-2'>
-                    {loading && <Loading className="mt-1 px-2" size={20} />}
-                    <Button variant="primary" type="submit" className='w-50'>
-                      Submit
-                    </Button>
+
+                  <div className='d-flex justify-content-center mt-2'>
+                    {loading && <Loading size={20} />}
+                    <Button type="submit" className='w-50'>Submit</Button>
                   </div>
+
                 </Form>
               </div>
             </Card.Body>
           </Card>
-
         </Col>
       </Row>
+
       <div className='text-center py-2'>
-        For any further queries contact <a style={{ textDecoration: 'none' }} href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> or 7975977658
+        For any queries contact <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
       </div>
-      <Modal show={showModal} onHide={setShowModal}>
-        <Modal.Header closeButton>
-          <Modal.Title>Confirm Details</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Row>
-            <Col md={5}>
-              <div className="py-2 text-right text-secondary">Name: </div>
-              <div className="py-2 text-right text-secondary">Email: </div>
-              <div className="py-2 text-right text-secondary">Phone: </div>
-              <div className="py-2 text-right text-secondary">Service: </div>
-              <div className="py-2 text-right text-secondary">Location: </div>
-              <div className="py-2 text-right text-secondary">Payment Screenshot: </div>
-            </Col>
-            <Col md={7}>
-              <div className="py-2">{bookingInfo.name}</div>
-              <div className="py-2">{bookingInfo.email}</div>
-              <div className="py-2">{bookingInfo.phonenumber}</div>
-              <div className="py-2">{bookingInfo.servicetype}</div>
-              <div className="py-2">{bookingInfo.location}</div>
-              <div className="py-2"><img src={pic[1]} alt='Payment Screenshot' width={250} /></div>
-            </Col>
-          </Row>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button className='px-4' variant="secondary" onClick={() => setShowModal(false)}>
-            Edit
-          </Button>
-          <Button className='px-4' variant="primary" onClick={() => createBooking()}>
-            Proceed
-          </Button>
-        </Modal.Footer>
-      </Modal>
     </MainScreen>
-  )
+  );
 }
 
 export default CreateBooking;
