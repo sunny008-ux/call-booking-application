@@ -1,0 +1,25 @@
+name: User UI CI
+
+on:
+  push:
+    paths:
+      - "user-ui/**"
+
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: user-ui
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build UI
+        run: npm install && npm run build
+
+      - name: Docker Build & Push
+        run: |
+          docker build -t sunnytyagi13/user-ui:${{ github.sha }} .
+          docker push sunnytyagi13/user-ui:${{ github.sha }}
