@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: user-api
-          image: sunnytyagi13/user-api:64db6f8
+          image: sunnytyagi13/user-api:a458415
           imagePullPolicy: Always
 
           ports:
