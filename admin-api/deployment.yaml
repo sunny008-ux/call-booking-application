@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: admin-api
-          image: sunnytyagi13/call-booking-admin-api:36
+          image: sunnytyagi13/admin-api:ac6c309
           ports:
             - containerPort: 3000
           env:
