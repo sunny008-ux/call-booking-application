@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: user-api
-          image: sunnytyagi13/call-booking-user-api:51
+          image: sunnytyagi13/call-booking-user-api:64db6f8
           imagePullPolicy: Always
 
           ports:
