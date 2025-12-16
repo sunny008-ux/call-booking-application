@@ -42,34 +42,38 @@ spec:
               value: "admin@deekshithsn.co.in"
 
             # ---------------------------
-            # SMTP (from Kubernetes Secret)
+            # SMTP (OPTIONAL for DEV)
             # ---------------------------
             - name: SMTP_HOST
               valueFrom:
                 secretKeyRef:
                   name: smtp-secret
                   key: SMTP_HOST
+                  optional: true
 
             - name: SMTP_PORT
               valueFrom:
                 secretKeyRef:
                   name: smtp-secret
                   key: SMTP_PORT
+                  optional: true
 
             - name: SMTP_USER
               valueFrom:
                 secretKeyRef:
                   name: smtp-secret
                   key: SMTP_USER
+                  optional: true
 
             - name: SMTP_PASS
               valueFrom:
                 secretKeyRef:
                   name: smtp-secret
                   key: SMTP_PASS
+                  optional: true
 
           # ---------------------------
-          # Health checks (IMPORTANT)
+          # Health checks
           # ---------------------------
           readinessProbe:
             httpGet:
@@ -86,7 +90,7 @@ spec:
             periodSeconds: 20
 
           # ---------------------------
-          # Resources (best practice)
+          # Resources
           # ---------------------------
           resources:
             requests:
